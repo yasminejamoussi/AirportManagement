@@ -1,0 +1,22 @@
+spring:
+  config:
+    import: optional:configserver:http://localhost:8888
+  application:
+    name: Forum-service
+  datasource:
+    username: root
+    #password: med
+    url: jdbc:mysql://localhost:3306/Forum?createDatabaseIfNotExist=true&useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    database: mysql
+    database-platform: org.hibernate.dialect.MySQLDialect
+server:
+  port: 8085
+logging:
+  level:
+    org.springframework: DEBUG
+    org.hibernate: DEBUG
+

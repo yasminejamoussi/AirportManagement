@@ -1,0 +1,5 @@
+spring:
+  config:
+    import: optional:configserver:http://localhost:8888  # Commenter ou supprimer si non utilisé
+  application:
+    name: Passager-service

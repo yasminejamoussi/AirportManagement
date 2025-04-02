@@ -1,0 +1,93 @@
+services:
+
+  mongodb:
+    container_name: mongodbb
+    image: mongo
+    ports:
+      - 27018:27017
+    volumes:
+      - mongo:/data
+
+    networks:
+      - microservices-net
+
+
+  mongo-express:
+    container_name: ms_mongo_express
+    image: mongo-express
+    restart: always
+    ports:
+      - 8088:8088
+    environment:
+
+      - ME_CONFIG_MONGODB_SERVER=mongodb
+
+
+    networks:
+      - microservices-net
+
+  mail-dev:
+    container_name: ms_mail_dev
+    image: maildev/maildev
+    ports:
+      - 1080:1080 # UI
+      - 1025:1025 # SMTP
+    networks:
+      - microservices-net
+
+  mysql:
+    container_name: ms_mysql
+    image: mysql:latest
+    environment:
+      MYSQL_ROOT_PASSWORD: med
+      MYSQL_DATABASE: ObjetPerdu
+      MYSQL_USER: med
+      MYSQL_PASSWORD: med
+    ports:
+      - 3307:3307  # Mappe le port 3306 du conteneur à localhost:3306
+    volumes:
+      - mysql:/var/lib/mysql
+    networks:
+      - microservices-net
+    restart: unless-stopped
+  zipkin:
+   container_name: zipkin
+   image: openzipkin/zipkin
+   ports:
+    - 9411:9411
+
+  keycloak:
+   container_name: keycloak-ms
+   image: quay.io/keycloak/keycloak:24.0.2
+   ports:
+    - 9098:8080
+   environment:
+    KEYCLOAK_ADMIN: admin
+    KEYCLOAK_ADMIN_PASSWORD: admin
+   networks:
+    - microservices-net
+   command:
+    "start-dev"
+
+  h2:
+    container_name: ms_h2
+    image: oscarfonts/h2
+    ports:
+      - 8083:8083 # Web console
+      - 9092:9092 # TCP server
+    environment:
+      - H2_OPTIONS=-webAllowOthers -tcpAllowOthers
+    volumes:
+      - h2:/opt/h2-data
+    networks:
+      - microservices-net
+    restart: unless-stopped
+
+networks:
+  microservices-net:
+    driver: bridge
+
+volumes:
+  mongo:
+  mysql:
+  h2:
