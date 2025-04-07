@@ -16,9 +16,9 @@ import java.util.List;
 public class ObjetPerdu {
     @Id
     @GeneratedValue
-    private int id;
+    private int  id;
     private String type_objet;
-    private String description;
+    private String  description;
     private String photo;
     private String lieu_decouverte;
     private Date date_decouverte;
