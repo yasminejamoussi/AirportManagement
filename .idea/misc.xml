@@ -1,0 +1,21 @@
+<project version="4">
+  <component name="ExternalStorageConfigurationManager" enabled="true" />
+  <component name="MavenProjectsManager">
+    <option name="originalFiles">
+      <list>
+        <option value="$PROJECT_DIR$/Backend/services/Forum/pom.xml" />
+        <option value="$PROJECT_DIR$/Backend/services/Passager/pom.xml" />
+        <option value="$PROJECT_DIR$/Backend/services/discovery/pom.xml" />
+        <option value="$PROJECT_DIR$/Backend/services/ApiGateway/pom.xml" />
+        <option value="$PROJECT_DIR$/Backend/services/ObjetPerdu/pom.xml" />
+        <option value="$PROJECT_DIR$/Backend/services/Reclamation/pom.xml" />
+        <option value="$PROJECT_DIR$/Backend/services/AgentAeroport/pom.xml" />
+        <option value="$PROJECT_DIR$/Backend/services/config.server/pom.xml" />
+        <option value="$PROJECT_DIR$/Backend/services/LivraisonBagages/pom.xml" />
+      </list>
+    </option>
+  </component>
+  <component name="ProjectRootManager" version="2" languageLevel="JDK_17" default="true" project-jdk-name="jbr-17" project-jdk-type="JavaSDK">
+    <output url="file://$PROJECT_DIR$/out" />
+  </component>
+</project>

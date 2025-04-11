@@ -1,0 +1,61 @@
+spring:
+  config:
+    import: optional:configserver:http://localhost:8888
+  application:
+    name: ApiGateway-service
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+      routes:
+        - id: PASSAGER-SERVICE
+          uri: lb:http://PASSAGER-SERVICE
+          predicates:
+            - Path=/api/passager/**
+        - id: livraisonbagages-service
+          uri: lb:http://LIVRAISONBAGAGES-SERVICE
+          predicates:
+            - Path=/api/livraisonbagage/**
+        - id: forum-service
+          uri: lb:http://FORUM-SERVICE
+          predicates:
+            - Path=/forum/**
+        - id: reclamation-service
+          uri: lb:http://RECLAMATION-SERVICE
+          predicates:
+            - Path=/reclamation/**
+        - id: objetperdu-service
+          uri: lb:http://OBJETPERDU-SERVICE
+          predicates:
+            - Path=/objetperdu/**
+        - id: AGENTAEROPORT-SERVICE
+          uri: lb:http://AGENTAEROPORT-SERVICE
+          predicates:
+            - Path=/agentaeroport/**
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: "http://localhost:4200"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+            allowCredentials: true
+  #security:
+  #  oauth2:
+  #    resourceserver:
+  #      jwt:
+  #        issuer-uri: "http://localhost:9098/realms/JobBoardKeycloack"
+
+server:
+  port: 8087
+
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
+    reactor.netty.http.client: DEBUG
