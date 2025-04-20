@@ -9,10 +9,3 @@ spring:
 server:
   port: 8091
 
-twilio:
-  account:
-    sid: ACe6dbad8422395de0446be738c7155d49
-  auth:
-    token: 8533bd52b0a9aff02c1b64660389aa7e
-  phone:
-    number: +16893198559
