@@ -1,93 +1,259 @@
+version: '3.8'
+
 services:
-
-  mongodb:
-    container_name: mongodbb
-    image: mongo
+  config-server:
+    build:
+      context: ./services/config.server
+      dockerfile: Dockerfile
     ports:
-      - 27018:27017
-    volumes:
-      - mongo:/data
-
+      - "8888:8888"
     networks:
-      - microservices-net
+      - app-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8888/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
-
-  mongo-express:
-    container_name: ms_mongo_express
-    image: mongo-express
-    restart: always
+  eureka-server:
+    build:
+      context: ./services/discovery
+      dockerfile: Dockerfile
     ports:
-      - 8088:8088
+      - "8761:8761"
     environment:
-
-      - ME_CONFIG_MONGODB_SERVER=mongodb
-
-
+      - SERVER_PORT=8761  # Force Eureka to run on port 8761
+      - SPRING_CLOUD_CONFIG_URI=http://config-server:8888  # Point to config-server container
+      - EUREKA_CLIENT_REGISTER_WITH_EUREKA=false  # Disable self-registration
+      - EUREKA_CLIENT_FETCH_REGISTRY=false  # Disable fetching registry (standalone mode)
+      - EUREKA_SERVER_ENABLE_SELF_PRESERVATION=true  # Optional: Keep server running even with no clients
     networks:
-      - microservices-net
-
-  mail-dev:
-    container_name: ms_mail_dev
-    image: maildev/maildev
-    ports:
-      - 1080:1080 # UI
-      - 1025:1025 # SMTP
-    networks:
-      - microservices-net
-
-  mysql:
-    container_name: ms_mysql
-    image: mysql:latest
-    environment:
-      MYSQL_ROOT_PASSWORD: med
-      MYSQL_DATABASE: ObjetPerdu
-      MYSQL_USER: med
-      MYSQL_PASSWORD: med
-    ports:
-      - 3307:3307  # Mappe le port 3306 du conteneur à localhost:3306
-    volumes:
-      - mysql:/var/lib/mysql
-    networks:
-      - microservices-net
-    restart: unless-stopped
-  zipkin:
-   container_name: zipkin
-   image: openzipkin/zipkin
-   ports:
-    - 9411:9411
+      - app-network
+    depends_on:
+      - config-server
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   keycloak:
-   container_name: keycloak-ms
-   image: quay.io/keycloak/keycloak:24.0.2
-   ports:
-    - 9098:8080
-   environment:
-    KEYCLOAK_ADMIN: admin
-    KEYCLOAK_ADMIN_PASSWORD: admin
-   networks:
-    - microservices-net
-   command:
-    "start-dev"
-
-  h2:
-    container_name: ms_h2
-    image: oscarfonts/h2
-    ports:
-      - 8083:8083 # Web console
-      - 9092:9092 # TCP server
+    image: quay.io/keycloak/keycloak:26.0.0
     environment:
-      - H2_OPTIONS=-webAllowOthers -tcpAllowOthers
-    volumes:
-      - h2:/opt/h2-data
+      - KEYCLOAK_ADMIN=admin
+      - KEYCLOAK_ADMIN_PASSWORD=admin
+      - KC_DB=dev-file
+      - KC_HOSTNAME_STRICT=false
+      - KC_HTTP_ENABLED=true
+      - KEYCLOAK_FRONTEND_URL=http://keycloak:8080
+      - KC_PROXY=edge
+    ports:
+      - "9098:8080"
+    command: start-dev
     networks:
-      - microservices-net
-    restart: unless-stopped
+      - app-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  mongodb:
+    image: mongo:6.0
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb-data:/data/db
+    networks:
+      - app-network
+
+  mysql:
+    image: mysql:8.0
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=Forum
+      - MYSQL_DATABASE=ObjetPerdu
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - app-network
+
+  api-gateway:
+    build:
+      context: ./services/ApiGateway
+      dockerfile: Dockerfile
+    ports:
+      - "8087:8087"
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=http://keycloak:8080/realms/JobBoardKeycloack
+    networks:
+      - app-network
+    depends_on:
+      - eureka-server
+      - config-server
+      - keycloak
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8087/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  passager-service:
+    build:
+      context: ./services/Passager
+      dockerfile: Dockerfile
+    ports:
+      - "8091:8091"
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888
+      - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/passager
+    networks:
+      - app-network
+    depends_on:
+      - eureka-server
+      - config-server
+      - mongodb
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  forum-service:
+    build:
+      context: ./services/Forum
+      dockerfile: Dockerfile
+    ports:
+      - "8085:8085"
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/Forum?createDatabaseIfNotExist=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=root
+    networks:
+      - app-network
+    depends_on:
+      - eureka-server
+      - config-server
+      - mysql
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  livraisonbagages-service:
+    build:
+      context: ./services/LivraisonBagages
+      dockerfile: Dockerfile
+    ports:
+      - "8090:8090"
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888
+      - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/livraisonbagages
+    networks:
+      - app-network
+    depends_on:
+      - eureka-server
+      - config-server
+      - mongodb
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8083/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  reclamation-service:
+    build:
+      context: ./services/Reclamation
+      dockerfile: Dockerfile
+    ports:
+      - "8082:8082"
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888
+      - SPRING_DATASOURCE_URL=jdbc:h2:mem:reclamation
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.h2.Driver
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+    networks:
+      - app-network
+    depends_on:
+      - eureka-server
+      - config-server
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8084/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  objetperdu-service:
+    build:
+      context: ./services/ObjetPerdu
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/ObjetPerdu?createDatabaseIfNotExist=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=root
+    networks:
+      - app-network
+    depends_on:
+      - eureka-server
+      - config-server
+      - mysql
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8085/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  agentaeroport-service:
+    build:
+      context: ./services/AgentDistrib
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017/agentaeroport
+      - EUREKA_HOST=eureka-server
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
+    networks:
+      - app-network
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      mongodb:
+        condition: service_started
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:3000/agents" ] # Adjust endpoint if needed
+      interval: 30s
+      timeout: 10s
+      retries: 3
+  frontend:
+    build:
+      context: ./Frontend/frontend
+      dockerfile: Dockerfile
+    ports:
+      - "4200:80"
+    networks:
+      - app-network
+    depends_on:
+      - api-gateway
 
 networks:
-  microservices-net:
+  app-network:
     driver: bridge
 
 volumes:
-  mongo:
-  mysql:
-  h2:
+  mongodb-data:
+  mysql-data:
