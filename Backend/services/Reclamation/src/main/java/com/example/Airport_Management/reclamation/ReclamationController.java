@@ -44,29 +44,28 @@ public class ReclamationController {
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<Reclamation> createReclamation(
-            @RequestPart("reclamation") String reclamationJson, // Reclamation en JSON sous forme de String
+            @RequestPart("reclamation") String reclamationJson,
             @RequestPart(value = "image", required = false) MultipartFile image) {
         try {
-            // Convertir le JSON en objet Reclamation
             ObjectMapper objectMapper = new ObjectMapper();
             Reclamation reclamation = objectMapper.readValue(reclamationJson, Reclamation.class);
 
-            // Gérer l’image si présente
             if (image != null && !image.isEmpty()) {
-                // Convertir l’image en base64 (ou stocker sur disque/cloud selon ton choix)
                 String base64Image = Base64.getEncoder().encodeToString(image.getBytes());
-                reclamation.setImage(base64Image); // Suppose un champ 'image' dans Reclamation
+                reclamation.setImage(base64Image);
             }
 
-            // Sauvegarder la réclamation
             Reclamation savedReclamation = reclamationService.addReclamation(reclamation);
             return new ResponseEntity<>(savedReclamation, HttpStatus.CREATED);
+        } catch (IllegalArgumentException e) {
+            // Erreur de validation (par exemple, passager non trouvé)
+            System.err.println("Erreur de validation : " + e.getMessage());
+            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST); // 400
         } catch (Exception e) {
             System.err.println("Erreur lors de la création de la réclamation : " + e.getMessage());
-            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR); // 500
         }
     }
-
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<ReclamationDTO>> getAll() {
         try {

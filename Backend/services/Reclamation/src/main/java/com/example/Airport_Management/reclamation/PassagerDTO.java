@@ -1,13 +1,10 @@
 package com.example.Airport_Management.reclamation;
 
 import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
-
 import java.util.ArrayList;
 import java.util.List;
 
-
+@Data
 public class PassagerDTO {
     private String id;
     private String nom;
@@ -16,6 +13,8 @@ public class PassagerDTO {
     private int numero;
     private String notifications;
     private List<DeclarationDTO> historiqueDeclarations = new ArrayList<>();
+    private String type;
+    private String password;
 
     public String getId() {
         return id;
@@ -72,4 +71,21 @@ public class PassagerDTO {
     public void setHistoriqueDeclarations(List<DeclarationDTO> historiqueDeclarations) {
         this.historiqueDeclarations = historiqueDeclarations;
     }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
 }
+

@@ -1,27 +1,4 @@
 services:
-
-  mongodb:
-    container_name: mongodbb
-    image: mongo
-    ports:
-      - 27017:27017
-    volumes:
-      - mongo:/data
-
-    networks:
-      - microservices-net
-
-
-
-  mail-dev:
-    container_name: ms_mail_dev
-    image: maildev/maildev
-    ports:
-      - 1080:1080 # UI
-      - 1025:1025 # SMTP
-    networks:
-      - microservices-net
-
   mysql:
     container_name: ms_mysql
     image: mysql:latest

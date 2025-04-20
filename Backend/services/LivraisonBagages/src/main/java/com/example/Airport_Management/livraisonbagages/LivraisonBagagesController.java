@@ -151,4 +151,21 @@ public class LivraisonBagagesController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+    @GetMapping("/search")
+    public ResponseEntity<List<LivraisonBagages>> searchLivraisonBagages(@RequestParam String adresse) {
+        System.out.println("Recherche des livraisons avec adresse: " + adresse); // Log pour déboguer
+        List<LivraisonBagages> livraisonBagages = livraisonBagagesService.searchLivraisonBagages(adresse);
+        System.out.println("Livraisons trouvées: " + livraisonBagages); // Log pour déboguer
+        return ResponseEntity.ok(livraisonBagages);
+    }
+    @GetMapping("/sorted")
+    public ResponseEntity<List<LivraisonBagages>> getAllLivraisonBagagesSorted(@RequestParam(defaultValue = "asc") String sort) {
+        List<LivraisonBagages> livraisonBagages;
+        if ("desc".equalsIgnoreCase(sort)) {
+            livraisonBagages = livraisonBagagesService.getAllSortedByDateDesc();
+        } else {
+            livraisonBagages = livraisonBagagesService.getAllSortedByDateAsc();
+        }
+        return new ResponseEntity<>(livraisonBagages, HttpStatus.OK);
+    }
 }

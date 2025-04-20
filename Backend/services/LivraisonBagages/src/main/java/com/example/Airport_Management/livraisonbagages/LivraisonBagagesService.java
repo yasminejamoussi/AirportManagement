@@ -5,10 +5,12 @@ import com.example.Airport_Management.feign.PassagerClient;
 import feign.FeignException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
+
 import java.util.Collections;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import com.itextpdf.text.DocumentException;
@@ -127,4 +129,18 @@ public class LivraisonBagagesService {
         LivraisonBagagesDTO livraisonDTO = mapToDTO(livraison);
         return pdfGenerator.generateDeliveryReceipt(livraisonDTO);
     }
+
+    public List<LivraisonBagages> searchLivraisonBagages(String adresse) {
+        return livraisonBagagesRepository.findByAdresseContainingIgnoreCase(adresse);
+    }
+
+
+    public List<LivraisonBagages> getAllSortedByDateDesc() {
+        return livraisonBagagesRepository.findAll(Sort.by(Sort.Direction.DESC, "date_prevue"));
+    }
+
+    public List<LivraisonBagages> getAllSortedByDateAsc() {
+        return livraisonBagagesRepository.findAll(Sort.by(Sort.Direction.ASC, "date_prevue"));
+    }
+
 }

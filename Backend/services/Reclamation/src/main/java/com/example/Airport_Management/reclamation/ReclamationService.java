@@ -40,22 +40,27 @@ public class ReclamationService {
 
             validateReclamation(reclamation);
 
+            // Vérifier les passagers
             if (reclamation.getPassagerIds() != null) {
                 for (String passagerId : reclamation.getPassagerIds()) {
                     try {
                         passagerClient.getPassagerById(passagerId);
                     } catch (Exception e) {
-                        throw new RuntimeException("Passager avec l'ID " + passagerId + " n'existe pas");
+                        // Lever une exception avec un message clair
+                        throw new IllegalArgumentException("Passager avec l'ID " + passagerId + " n'existe pas");
                     }
                 }
             }
 
             Reclamation savedReclamation = reclamationRepository.save(reclamation);
 
-            //  Envoyer un email au passager concerné
+            // Envoyer un email au passager concerné
             sendNotificationEmail(savedReclamation, "Confirmation de votre réclamation");
 
             return savedReclamation;
+        } catch (IllegalArgumentException e) {
+            // Gérer les erreurs de validation (comme passager non trouvé)
+            throw e; // Laisser le controller gérer cette exception
         } catch (Exception e) {
             throw new RuntimeException("Erreur lors de la création de la réclamation: " + e.getMessage());
         }
@@ -63,21 +68,21 @@ public class ReclamationService {
 
     private void validateReclamation(Reclamation reclamation) {
         if (reclamation == null) {
-            throw new RuntimeException("La réclamation ne peut pas être null");
+            throw new IllegalArgumentException("La réclamation ne peut pas être null");
         }
         if (reclamation.getTypeReclamation() == null) {
-            throw new RuntimeException("Le type de réclamation est obligatoire");
+            throw new IllegalArgumentException("Le type de réclamation est obligatoire");
         }
         if (reclamation.getStatut() == null) {
-            throw new RuntimeException("Le statut est obligatoire");
+            throw new IllegalArgumentException("Le statut est obligatoire");
         }
         if (reclamation.getDescription() == null || reclamation.getDescription().trim().isEmpty()) {
-            throw new RuntimeException("La description est obligatoire");
+            throw new IllegalArgumentException("La description est obligatoire");
         }
         if (reclamation.getDate_resolution() != null &&
                 reclamation.getDate_soumission() != null &&
                 reclamation.getDate_resolution().isBefore(reclamation.getDate_soumission())) {
-            throw new RuntimeException("La date de résolution ne peut pas être antérieure à la date de soumission");
+            throw new IllegalArgumentException("La date de résolution ne peut pas être antérieure à la date de soumission");
         }
     }
 

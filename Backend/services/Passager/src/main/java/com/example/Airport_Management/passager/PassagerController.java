@@ -26,6 +26,7 @@ public class PassagerController {
         this.passagerService = passagerService;
         this.jwtService = jwtService;
     }
+
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<Map<String, String>> createPassager(@RequestBody @Valid Passager passager) {

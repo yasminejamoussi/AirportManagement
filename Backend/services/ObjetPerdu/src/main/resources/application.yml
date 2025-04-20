@@ -13,6 +13,13 @@ spring:
       ddl-auto: update
     database: mysql
     database-platform: org.hibernate.dialect.MySQLDialect
+
+  security:
+    oauth2:
+      resource-server:
+        jwt:
+          issuer-uri: "http://localhost:9098/realms/JobBoardKeycloack"
+
 server:
   port: 8081
 logging:
